@@ -135,9 +135,25 @@ void updateImage(const crl::multisense::image::Header &sourceHeader,
     }
 
     if (targetHeader.source == crl::multisense::Source_Disparity){
-        cv::Mat m = cv::Mat(544, 1024, CV_16S, (uchar*) targetHeader.imageDataP);
-        if (!m.empty()){
-            cv::imshow("disparity", m);
+        cv::Mat m;
+        cv::Mat disparityMat(targetHeader.height, targetHeader.width, CV_16UC1,
+                         const_cast<void*>(targetHeader.imageDataP));
+
+        // Convert to float, as promised to the calling context.
+        disparityMat.convertTo(m, CV_32FC1, 1.0/16.0);
+
+        /*
+        cv::Mat cloudMat;
+        if (!disparityMat.empty()) {
+            reprojectImageTo3D(disparityMat, cloudMat, m_qMatrix, true);
+        }
+*/
+
+        cv::Mat matdisplay;
+        m.convertTo(matdisplay, CV_8UC1, 1);
+
+        if (!matdisplay.empty()){
+            cv::imshow("disparity", matdisplay);
             if (cv::waitKey(1) == 27)
                 running = false;
 
