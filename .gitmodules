@@ -1,0 +1,3 @@
+[submodule "external/LibMultiSense"]
+	path = external/LibMultiSense
+	url = https://github.com/carnegierobotics/LibMultiSense
