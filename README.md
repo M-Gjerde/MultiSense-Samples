@@ -31,8 +31,9 @@ make -j$(CORES)
 
 
 ### With PCL support
-Locate and download pcl source: [PCL](https://pcl.readthedocs.io/projects/tutorials/en/latest/compiling_pcl_posix.html)
+Next steps include downloading and building PCL from source
 
+Locate and download pcl source: [PCL](https://pcl.readthedocs.io/projects/tutorials/en/latest/compiling_pcl_posix.html)
 Extract source code and create a build directory.
 
 ``` shell
