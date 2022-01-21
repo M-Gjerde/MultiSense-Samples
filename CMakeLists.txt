@@ -9,14 +9,23 @@ set(BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Define where the result of the build should go.
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIRECTORY}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BASE_DIRECTORY}/lib)
-
-
-
 include_directories(BEFORE external/LibMultiSense/source ${BASE_DIRECTORY}/include)
-
 add_subdirectory(external/LibMultiSense/source/LibMultiSense)
 find_package(OpenCV)
 
-add_subdirectory(src)
+add_executable(main src/main.cpp)
+target_link_libraries(main MultiSense ${OpenCV_LIBS})
+
+# Inclue PCL and build examples including PCL
+if(${BUILD_PCL_EXAMPLE})
+    cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+    find_package(PCL REQUIRED COMPONENTS common io)
+    include_directories(${PCL_INCLUDE_DIRS})
+    include_directories(${PCL_INCLUDE_DIRS})
+    link_directories(${PCL_LIBRARY_DIRS})
+    add_definitions(${PCL_DEFINITIONS})
+
+    add_executable(pcl_example src/main_pcl.cpp)
+    target_link_libraries(pcl_example ${PCL_LIBRARIES} MultiSense ${OpenCV_LIBS})
+
+endif()

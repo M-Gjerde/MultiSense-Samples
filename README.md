@@ -12,7 +12,7 @@ Get better started with your Carnegie Robotics' MultiSense stereo products
 ## Introduction
 
 
-## Installation
+## Installation - Linux
 
 To build this repo follow steps below.
 Firstly clone project and update submodules
@@ -60,6 +60,22 @@ Executables are located in $(BUILD)/bin
 
 Please open an issue for support.
 
+## Common Errors
+### No connection to MultiSense
+If following error is received:
+``` c++
+Failed to establish comms with the sensor at "10.66.171.21"
+Could not start communications with MultiSense sensor.
+```
+Run in terminal:
+``` shell
+sudo ifconfig [Interface_name] 10.66.171.20 netmask 255.255.255.0 up
+sudo ifconfig [Interface_name] mtu 7200
+sudo sh -c 'echo 16777215 > /proc/sys/net/core/rmem_max'
+sudo sh -c 'echo 16777215 > /proc/sys/net/core/wmem_max'
+```
 ## Contributing
+
+
 
 Please contribute using [Github Flow](https://guides.github.com/introduction/flow/). Create a branch, add commits, and open a pull request
