@@ -22,7 +22,7 @@ git clone https://github.com/M-Gjerde/MultiSense-Samples
 git submodule update --init
 ```
 Build project usually in a $(BUILD) folder within MultiSense-Samples $(SRC_DIR), but can be anywhere you want
-If you want with PCL support then follow - [With PCL support](#With PCL support)
+If you want with PCL support then follow - [With PCL support](#WithPCLsupport)
 ```shell
 cd $(BUILD)
 cmake -DCMAKE_BUILD_TYPE=Release $(SRC_DIR)
