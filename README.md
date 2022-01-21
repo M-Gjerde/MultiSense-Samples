@@ -31,6 +31,8 @@ make -j$(CORES)
 
 
 ### With PCL support
+The PCL visualizer is dependent on VTK. build and install this dependency before building PCL.
+
 Next steps include downloading and building PCL from source
 
 Locate and download pcl source: [PCL](https://pcl.readthedocs.io/projects/tutorials/en/latest/compiling_pcl_posix.html)

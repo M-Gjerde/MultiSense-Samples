@@ -13,7 +13,7 @@ include_directories(BEFORE external/LibMultiSense/source ${BASE_DIRECTORY}/inclu
 add_subdirectory(external/LibMultiSense/source/LibMultiSense)
 find_package(OpenCV)
 
-add_executable(main src/main.cpp)
+add_executable(main src/main.cpp src/pcl_test.cpp)
 target_link_libraries(main MultiSense ${OpenCV_LIBS})
 
 # Inclue PCL and build examples including PCL
