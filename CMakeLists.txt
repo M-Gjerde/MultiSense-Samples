@@ -28,4 +28,8 @@ if(${BUILD_PCL_EXAMPLE})
     add_executable(pcl_example src/main_pcl.cpp)
     target_link_libraries(pcl_example ${PCL_LIBRARIES} MultiSense ${OpenCV_LIBS})
 
+    # Pure PCL Visualizer example
+    add_executable(pcl_visualizer_example src/pcl_test.cpp)
+    target_link_libraries(pcl_example ${PCL_LIBARIES} ${OpenCV_LIBS})
+
 endif()
