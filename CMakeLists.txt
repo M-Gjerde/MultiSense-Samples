@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.1)
 project(MultiSense_Samples)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -11,6 +11,8 @@ set(BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIRECTORY}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BASE_DIRECTORY}/lib)
+
+
 
 include_directories(BEFORE external/LibMultiSense/source ${BASE_DIRECTORY}/include)
 
