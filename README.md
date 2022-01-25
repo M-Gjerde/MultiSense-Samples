@@ -19,6 +19,7 @@ Get better started with your Carnegie Robotics' MultiSense stereo products
   <li>OpenCV</li>
 </ul>  
 
+### Build Instructions
 To build this repo follow steps below. Firstly clone project and update submodules
 
 ```shell
