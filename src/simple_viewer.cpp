@@ -1,12 +1,16 @@
-#include <iostream>
+/* \author Geoffrey Biggs */
 
-#include <LibMultiSense/include/MultiSense/MultiSenseChannel.hh>
-#include <LibMultiSense/include/MultiSense/MultiSenseTypes.hh>
-#include <cstring>
-#include <opencv4/opencv2/core/mat.hpp>
-#include <opencv4/opencv2/core/hal/interface.h>
+#include <iostream>
+#include <thread>
+
+#include <pcl/common/common_headers.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/console/parse.h>
+#include "MultiSense/MultiSenseChannel.hh"
+#include "MultiSense/MultiSenseTypes.hh"
+#include "opencv2/opencv.hpp"
 #include "MultiSense/details/utility/Exception.hh"
-#include "opencv4/opencv2/opencv.hpp"
 
 crl::multisense::Channel *m_channelP;
 crl::multisense::image::Header m_disparityHeader;
@@ -69,27 +73,42 @@ private:
     pthread_mutex_t *m_mutexP;
 };
 
-float exposure = 0.1;
 
-void SetExpThresh(float ExpThresh)
+unsigned int text_id = 0;
+void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event,
+                            void* viewer_void)
 {
-    printf("Setting exposure %f\n", ExpThresh);
+    pcl::visualization::PCLVisualizer *viewer = static_cast<pcl::visualization::PCLVisualizer *> (viewer_void);
+    if (event.getKeySym () == "r" && event.keyDown ())
+    {
+        std::cout << "r was pressed => removing all text" << std::endl;
 
-    crl::multisense::image::Config cfg;
-    crl::multisense::Status status;
-
-    status = m_channelP->getImageConfig(cfg);
-    if (crl::multisense::Status_Ok != status) {
-        CRL_EXCEPTION("Failed to query image config: %d\n", status);
-    }
-
-    cfg.setAutoExposureThresh(ExpThresh);  // Can be 0.0 -> 1.0 ?
-    status = m_channelP->setImageConfig(cfg);
-    if (crl::multisense::Status_Ok != status) {
-        CRL_EXCEPTION("Failed to configure sensor autoexposure threshold: %d\n",
-                      status);
+        char str[512];
+        for (unsigned int i = 0; i < text_id; ++i)
+        {
+            sprintf (str, "text#%03d", i);
+            viewer->removeShape (str);
+        }
+        text_id = 0;
     }
 }
+
+void mouseEventOccurred (const pcl::visualization::MouseEvent &event,
+                         void* viewer_void)
+{
+    pcl::visualization::PCLVisualizer *viewer = static_cast<pcl::visualization::PCLVisualizer *> (viewer_void);
+    if (event.getButton () == pcl::visualization::MouseEvent::LeftButton &&
+        event.getType () == pcl::visualization::MouseEvent::MouseButtonRelease)
+    {
+        std::cout << "Left mouse button released at position (" << event.getX () << ", " << event.getY () << ")" << std::endl;
+
+        char str[512];
+        sprintf (str, "text#%03d", text_id ++);
+        viewer->addText ("clicked here", event.getX (), event.getY (), str);
+    }
+}
+
+
 
 
 void updateImage(const crl::multisense::image::Header &sourceHeader,
@@ -498,9 +517,24 @@ void SetFPS(float FPS) {
 
 
 
-int main() {
 
-    std::cout << "Hello, PCL example!" << std::endl;
+pcl::visualization::PCLVisualizer::Ptr simpleVis (pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
+{
+    // --------------------------------------------
+    // -----Open 3D viewer and add point cloud-----
+    // --------------------------------------------
+    pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+    viewer->setBackgroundColor (0, 0, 0);
+    viewer->addPointCloud<pcl::PointXYZ> (cloud, "sample cloud");
+    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+    viewer->addCoordinateSystem (1.0);
+    viewer->initCameraParameters ();
+    return (viewer);
+}
+
+void prepareMultiSenseCamera(){
+
+    std::cout << "Hello, World!" << std::endl;
 
     std::string currentAddress = "10.66.171.21";
     int Cols = 1024;
@@ -612,10 +646,87 @@ int main() {
 
     m_channelP->addIsolatedCallback(lumaChromaLeftCallback, crl::multisense::Source_Luma_Left | crl::multisense::Source_Luma_Right);
 
+}
 
-    while (running);
 
-    cv::destroyAllWindows();
+int main(){
+
+// ------------------------------------
+    // -----Create example point cloud-----
+    // ------------------------------------
+    pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
+    std::cout << "Generating example point clouds.\n\n";
+    // We're going to make an ellipse extruded along the z-axis. The colour for
+    // the XYZRGB cloud will gradually go from red to green to blue.
+    std::uint8_t r(255), g(15), b(15);
+    for (float z(-1.0); z <= 1.0; z += 0.05)
+    {
+        for (float angle(0.0); angle <= 360.0; angle += 5.0)
+        {
+            pcl::PointXYZ basic_point;
+            basic_point.x = 0.5 * std::cos (pcl::deg2rad(angle));
+            basic_point.y = sinf (pcl::deg2rad(angle));
+            basic_point.z = z;
+            basic_cloud_ptr->points.push_back(basic_point);
+
+            pcl::PointXYZRGB point;
+            point.x = basic_point.x;
+            point.y = basic_point.y;
+            point.z = basic_point.z;
+            std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |
+                                 static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
+            point.rgb = *reinterpret_cast<float*>(&rgb);
+            point_cloud_ptr->points.push_back (point);
+        }
+        if (z < 0.0)
+        {
+            r -= 12;
+            g += 12;
+        }
+        else
+        {
+            g -= 12;
+            b += 12;
+        }
+    }
+    basic_cloud_ptr->width = basic_cloud_ptr->size ();
+    basic_cloud_ptr->height = 1;
+    point_cloud_ptr->width = point_cloud_ptr->size ();
+    point_cloud_ptr->height = 1;
+
+    // ----------------------------------------------------------------
+    // -----Calculate surface normals with a search radius of 0.05-----
+    // ----------------------------------------------------------------
+    pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+    ne.setInputCloud (point_cloud_ptr);
+    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+    ne.setSearchMethod (tree);
+    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals1 (new pcl::PointCloud<pcl::Normal>);
+    ne.setRadiusSearch (0.05);
+    ne.compute (*cloud_normals1);
+
+    // ---------------------------------------------------------------
+    // -----Calculate surface normals with a search radius of 0.1-----
+    // ---------------------------------------------------------------
+    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals2 (new pcl::PointCloud<pcl::Normal>);
+    ne.setRadiusSearch (0.1);
+    ne.compute (*cloud_normals2);
+
+    pcl::visualization::PCLVisualizer::Ptr viewer;
+    viewer = simpleVis(basic_cloud_ptr);
+
+
+    prepareMultiSenseCamera();
+
+    //--------------------
+    // -----Main loop-----
+    //--------------------
+    while (!viewer->wasStopped ())
+    {
+        viewer->spinOnce (100);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     return 0;
 }

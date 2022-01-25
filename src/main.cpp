@@ -116,7 +116,7 @@ void updateImage(const crl::multisense::image::Header &sourceHeader,
     if (targetHeader.source == crl::multisense::Source_Luma_Left){
         cv::Mat m = cv::Mat(272, 1024, CV_16U, (uchar*) targetHeader.imageDataP);
         if (!m.empty()){
-            cv::imshow("luma left", m);
+            //cv::imshow("luma left", m);
             if (cv::waitKey(1) == 27)
                 running = false;
 
@@ -127,7 +127,7 @@ void updateImage(const crl::multisense::image::Header &sourceHeader,
     if (targetHeader.source == crl::multisense::Source_Luma_Right){
         cv::Mat m = cv::Mat(272, 1024, CV_16U, (uchar*) targetHeader.imageDataP);
         if (!m.empty()){
-            cv::imshow("luma right", m);
+            //cv::imshow("luma right", m);
             if (cv::waitKey(1) == 27)
                 running = false;
 
@@ -153,7 +153,7 @@ void updateImage(const crl::multisense::image::Header &sourceHeader,
         m.convertTo(matdisplay, CV_8UC1, 1);
 
         if (!matdisplay.empty()){
-            cv::imshow("disparity", matdisplay);
+            //cv::imshow("disparity", matdisplay);
             if (cv::waitKey(1) == 27)
                 running = false;
 
@@ -164,7 +164,7 @@ void updateImage(const crl::multisense::image::Header &sourceHeader,
     if (targetHeader.source == crl::multisense::Source_Disparity_Cost){
         cv::Mat m = cv::Mat(544, 1024, CV_8U, (uchar*) targetHeader.imageDataP);
         if (!m.empty()){
-            cv::imshow("disparity cost", m);
+            //cv::imshow("disparity cost", m);
             if (cv::waitKey(1) == 27)
                 running = false;
 
@@ -609,9 +609,6 @@ int main() {
     m_channelP->addIsolatedCallback(disparityCostCallback, crl::multisense::Source_Disparity_Cost);
 
     m_channelP->addIsolatedCallback(lumaChromaLeftCallback, crl::multisense::Source_Luma_Left | crl::multisense::Source_Luma_Right);
-
-
-    while (running);
 
     cv::destroyAllWindows();
 

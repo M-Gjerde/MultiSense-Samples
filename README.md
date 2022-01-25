@@ -43,7 +43,8 @@ Extract source code and create a build directory.
 
 ``` shell
 cd $(BUILD)
-cmake -DCMAKE_BUILD_TYPE=Release $(PCL_SOURCE) 
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_visualization=ON $(PCL_SOURCE) 
+
 make -j$(CORES)
 sudo make  install
 ```
@@ -59,6 +60,9 @@ cmake -DBUILD_PCL_EXAMPLE=True ..
 ```
 
 ## Usage
+
+Minimal usage:
+
 
 Executables are located in $(BUILD)/bin
 
