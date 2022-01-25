@@ -17,7 +17,7 @@ To build this repo follow steps below. Firstly clone project and update submodul
 
 ```shell
 git clone https://github.com/M-Gjerde/MultiSense-Samples
-git submodule update --init
+cd MultiSense-Samples && git submodule update --init
 ```
 
 Build project usually in a $(BUILD) folder within MultiSense-Samples $(SRC_DIR), but can be anywhere you want If you
