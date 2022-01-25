@@ -13,6 +13,12 @@ Get better started with your Carnegie Robotics' MultiSense stereo products
 
 ## Installation - Linux
 
+### Prerequisites
+
+<ul>
+  <li>OpenCV</li>
+</ul>  
+
 To build this repo follow steps below. Firstly clone project and update submodules
 
 ```shell
@@ -26,7 +32,7 @@ want with PCL support then follow - [With PCL support](#PCL_SUPPORT)
 ```shell
 cd $(BUILD)
 cmake -DCMAKE_BUILD_TYPE=Release $(SRC_DIR)
-make -j$(CORES)
+make
 ```
 
 ### PCL_SUPPORT
@@ -45,7 +51,7 @@ Now build this repo with following:
 
 ``` shell
 cmake -DBUILD_PCL_EXAMPLE=True $(SRC_DIR)
-make -j$(CORES)
+make
 ```
 
 ## Samples
