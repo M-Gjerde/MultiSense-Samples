@@ -153,7 +153,9 @@ void updateImage(const crl::multisense::image::Header &sourceHeader,
         m.convertTo(matdisplay, CV_8UC1, 1);
 
         if (!matdisplay.empty()){
-            //cv::imshow("disparity", matdisplay);
+            cv::normalize(matdisplay, matdisplay, 255, 1, cv::NORM_MINMAX);
+            cv::applyColorMap(matdisplay, matdisplay, cv::COLORMAP_JET);
+            cv::imshow("disparity", matdisplay);
             if (cv::waitKey(1) == 27)
                 running = false;
 
@@ -609,6 +611,8 @@ int main() {
     m_channelP->addIsolatedCallback(disparityCostCallback, crl::multisense::Source_Disparity_Cost);
 
     m_channelP->addIsolatedCallback(lumaChromaLeftCallback, crl::multisense::Source_Luma_Left | crl::multisense::Source_Luma_Right);
+
+    while (running);
 
     cv::destroyAllWindows();
 

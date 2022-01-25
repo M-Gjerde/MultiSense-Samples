@@ -5,12 +5,11 @@
 
 #include <pcl/common/common_headers.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/console/parse.h>
 #include "MultiSense/MultiSenseChannel.hh"
 #include "MultiSense/MultiSenseTypes.hh"
 #include "opencv2/opencv.hpp"
 #include "MultiSense/details/utility/Exception.hh"
+#include <pcl/visualization/cloud_viewer.h>
 
 crl::multisense::Channel *m_channelP;
 crl::multisense::image::Header m_disparityHeader;
@@ -43,8 +42,8 @@ crl::multisense::image::Header m_lumaLeftHeader;
 // Pointers used to coordinate buffer use with libMultiSense.
 // These pointers "reserve" the image data that backs each of the
 // header members above.
-void* m_chromaLeftBufferP;
-void* m_lumaLeftBufferP;
+void *m_chromaLeftBufferP;
+void *m_lumaLeftBufferP;
 
 // Additional headers and buffers that always reference data with
 // matching frame IDs.  This lets member function
@@ -53,9 +52,13 @@ void* m_lumaLeftBufferP;
 // frameID from the most recent incoming chroma header.
 crl::multisense::image::Header m_matchedChromaLeftHeader;
 crl::multisense::image::Header m_matchedLumaLeftHeader;
-void* m_matchedChromaLeftBufferP;
-void* m_matchedLumaLeftBufferP;
+void *m_matchedChromaLeftBufferP;
+void *m_matchedLumaLeftBufferP;
 bool m_chromaSupported = true;
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+
 
 // Mutexes to coordinate image access between the callback
 // functions (above) and the copy*() functions (also above).
@@ -75,40 +78,105 @@ private:
 
 
 unsigned int text_id = 0;
-void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event,
-                            void* viewer_void)
-{
-    pcl::visualization::PCLVisualizer *viewer = static_cast<pcl::visualization::PCLVisualizer *> (viewer_void);
-    if (event.getKeySym () == "r" && event.keyDown ())
-    {
+
+void viewerOneOff(pcl::visualization::PCLVisualizer &viewer) {
+    viewer.setBackgroundColor(0.01, 0.01, 0.01);
+
+}
+
+void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event,
+                           void *viewer_void) {
+
+    if (event.getKeySym() == "r" && event.keyDown()) {
         std::cout << "r was pressed => removing all text" << std::endl;
 
         char str[512];
-        for (unsigned int i = 0; i < text_id; ++i)
-        {
-            sprintf (str, "text#%03d", i);
-            viewer->removeShape (str);
+        for (unsigned int i = 0; i < text_id; ++i) {
+            sprintf(str, "text#%03d", i);
+            //viewer->removeShape(str);
         }
         text_id = 0;
     }
+
+    if (event.getKeySym() == "m" && event.keyDown()) {
+        printf("m was pressed\n");
+
+        printf("Points: ");
+        for (int i = 0; i < 3; ++i){
+            std::cout << cloud->points[i * 10] << " ";
+        }
+        printf("\n");
+
+        viewer.showCloud(cloud);
+    }
+    if (event.getKeySym() == "n" && event.keyDown()) {
+        printf("n was pressed\n");
+        pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+        for (float z(-1.0); z <= 1.0; z += 0.05) {
+            for (float angle(0.0); angle <= 360.0; angle += 5.0) {
+                pcl::PointXYZ basic_point;
+                basic_point.x = 0.5 * std::cos(pcl::deg2rad(angle));
+                basic_point.y = sinf(pcl::deg2rad(angle));
+                basic_point.z = z;
+                basic_cloud_ptr->points.push_back(basic_point);
+
+            }
+
+        }
+        basic_cloud_ptr->width = basic_cloud_ptr->size();
+        basic_cloud_ptr->height = 1;
+
+        viewer.showCloud(basic_cloud_ptr);
+    }
+
+
 }
 
-void mouseEventOccurred (const pcl::visualization::MouseEvent &event,
-                         void* viewer_void)
-{
-    pcl::visualization::PCLVisualizer *viewer = static_cast<pcl::visualization::PCLVisualizer *> (viewer_void);
-    if (event.getButton () == pcl::visualization::MouseEvent::LeftButton &&
-        event.getType () == pcl::visualization::MouseEvent::MouseButtonRelease)
-    {
-        std::cout << "Left mouse button released at position (" << event.getX () << ", " << event.getY () << ")" << std::endl;
+void mouseEventOccurred(const pcl::visualization::MouseEvent &event,
+                        void *viewer_void) {
+    if (event.getButton() == pcl::visualization::MouseEvent::LeftButton &&
+        event.getType() == pcl::visualization::MouseEvent::MouseButtonRelease) {
+        std::cout << "Left mouse button released at position (" << event.getX() << ", " << event.getY() << ")"
+                  << std::endl;
 
-        char str[512];
-        sprintf (str, "text#%03d", text_id ++);
-        viewer->addText ("clicked here", event.getX (), event.getY (), str);
     }
 }
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr MatToPoinXYZ(cv::Mat OpencVPointCloud) {
+    /*
+    *  Function: Get from a Mat to pcl pointcloud datatype
+    *  In: cv::Mat
+    *  Out: pcl::PointCloud
+    */
+
+    //char pr=100, pg=100, pb=100;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr(
+            new pcl::PointCloud<pcl::PointXYZ>);//(new pcl::pointcloud<pcl::pointXYZ>);
+
+    for (int i = 0; i < OpencVPointCloud.cols; i++) {
+        //std::cout<<i<<endl;
+
+        pcl::PointXYZ point;
+        point.x = OpencVPointCloud.at<float>(0, i) / 100.0f;
+        point.y = OpencVPointCloud.at<float>(1, i) / 100.0f;
+        point.z = OpencVPointCloud.at<float>(2, i) / 100.0f;
+
+        // when color needs to be added:
+        //uint32_t rgb = (static_cast<uint32_t>(pr) << 16 | static_cast<uint32_t>(pg) << 8 | static_cast<uint32_t>(pb));
+        //point.rgb = *reinterpret_cast<float*>(&rgb);
+
+        point_cloud_ptr->points.push_back(point);
+
+
+    }
+    point_cloud_ptr->width = (int) point_cloud_ptr->points.size();
+    point_cloud_ptr->height = 1;
+
+    return point_cloud_ptr;
+
+}
 
 
 void updateImage(const crl::multisense::image::Header &sourceHeader,
@@ -134,75 +202,73 @@ void updateImage(const crl::multisense::image::Header &sourceHeader,
     // And make a local copy, so that client code can access the image
     // later.
     targetHeader = sourceHeader;
-    if (targetHeader.source == crl::multisense::Source_Luma_Left){
-        cv::Mat m = cv::Mat(272, 1024, CV_16U, (uchar*) targetHeader.imageDataP);
-        if (!m.empty()){
-            cv::imshow("luma left", m);
-            if (cv::waitKey(1) == 27)
-                running = false;
 
 
-        }
-    }
-
-    if (targetHeader.source == crl::multisense::Source_Luma_Right){
-        cv::Mat m = cv::Mat(272, 1024, CV_16U, (uchar*) targetHeader.imageDataP);
-        if (!m.empty()){
-            cv::imshow("luma right", m);
-            if (cv::waitKey(1) == 27)
-                running = false;
-
-        }
-    }
-
-    if (targetHeader.source == crl::multisense::Source_Disparity){
-        cv::Mat m;
+    if (targetHeader.source == crl::multisense::Source_Disparity) {
+        cv::Mat disparityFloatMat;
         cv::Mat disparityMat(targetHeader.height, targetHeader.width, CV_16UC1,
-                             const_cast<void*>(targetHeader.imageDataP));
+                             const_cast<void *>(targetHeader.imageDataP));
 
         // Convert to float, as promised to the calling context.
-        disparityMat.convertTo(m, CV_32FC1, 1.0/16.0);
+        disparityMat.convertTo(disparityFloatMat, CV_32FC1, 1.0 / 16.0);
 
-        /*
-        cv::Mat cloudMat;
+        // Default constructor initializes to zero size.
+
         if (!disparityMat.empty()) {
-            reprojectImageTo3D(disparityMat, cloudMat, m_qMatrix, true);
+
+            cv::Mat cloudMat;
+            reprojectImageTo3D(disparityFloatMat, cloudMat, m_qMatrix, true);
+
+            pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr(
+                    new pcl::PointCloud<pcl::PointXYZ>);//(new pcl::pointcloud<pcl::pointXYZ>);
+            cv::Vec3f CloudPt;
+            float X, Y, Z;
+
+            for (int r = 20 ; r < cloudMat.rows ; r++) {
+                for (int c = 0; c < cloudMat.cols; c++) {
+                    CloudPt = cloudMat.at<cv::Vec3f>(r, c);
+                    X = (float) (CloudPt[0]);           // Left-Right in camera frame
+                    Y = (float) (-CloudPt[1]);          // Up-down in camera frame
+                    Z = (float) (-CloudPt[2]);          // More negative is farther from the camera
+
+                    if (X < 10 && X > -10){
+                        if (Y < 10 && Y > -10){
+                            if (Z < 10 && Z > -10){
+                                point_cloud_ptr->push_back({X, Y, Z});
+                            }
+                        }
+                    }
+
+                }
+            }
+
+
+
+            point_cloud_ptr->width = (int) point_cloud_ptr->points.size();
+            point_cloud_ptr->height = 1;
+
+            viewer.showCloud(point_cloud_ptr);
+
         }
-*/
 
         cv::Mat matdisplay;
-        m.convertTo(matdisplay, CV_8UC1, 1);
+        disparityFloatMat.convertTo(matdisplay, CV_8UC1, 1);
 
-        if (!matdisplay.empty()){
+        if (!matdisplay.empty()) {
             cv::imshow("disparity", matdisplay);
             if (cv::waitKey(1) == 27)
                 running = false;
 
         }
     }
-
-
-    if (targetHeader.source == crl::multisense::Source_Disparity_Cost){
-        cv::Mat m = cv::Mat(544, 1024, CV_8U, (uchar*) targetHeader.imageDataP);
-        if (!m.empty()){
-            cv::imshow("disparity cost", m);
-            if (cv::waitKey(1) == 27)
-                running = false;
-
-        }
-    }
-
-
 }
 
 
-void updateLumaAndChroma(const crl::multisense::image::Header& header)
-{
+void updateLumaAndChroma(const crl::multisense::image::Header &header) {
     // Lock access to the local data pointers so we don't clobber them
     // while client code is reading from them, or other callbacks are
     // writing to them.
     ScopedLock lock(&(m_lumaAndChromaLeftMutex));
-
 
     // Copy a reference to the data that was just passed in.  This
     // lets us buffer the incoming luma or chroma data until matching
@@ -210,7 +276,7 @@ void updateLumaAndChroma(const crl::multisense::image::Header& header)
     // pointer prevents updateImage() from trying to lock
     // m_lumaAndChromaLeftMutex again, which would result in a
     // deadlock.
-    if(crl::multisense::Source_Luma_Left == header.source) {
+    if (crl::multisense::Source_Luma_Left == header.source) {
         updateImage(header, m_lumaLeftHeader,
                     0, &m_lumaLeftBufferP);
     } else if (crl::multisense::Source_Luma_Right == header.source) {
@@ -232,10 +298,10 @@ void updateLumaAndChroma(const crl::multisense::image::Header& header)
             // We have a matching luma/chroma pair.  Sanity check to make
             // sure we're not getting repeat frame IDs, or double-copying
             // somewhere.
-            if((m_lumaLeftHeader.frameId
-                == m_matchedLumaLeftHeader.frameId)
-               || (m_chromaLeftHeader.frameId
-                   == m_matchedChromaLeftHeader.frameId)) {
+            if ((m_lumaLeftHeader.frameId
+                 == m_matchedLumaLeftHeader.frameId)
+                || (m_chromaLeftHeader.frameId
+                    == m_matchedChromaLeftHeader.frameId)) {
 
 
                 // Sanity check: this should never happen.
@@ -283,9 +349,8 @@ void updateLumaAndChroma(const crl::multisense::image::Header& header)
 }
 
 // Calls non-static method updateLumaAndChroma()
-void lumaChromaLeftCallback(const crl::multisense::image::Header& header,
-                            void *userDataP)
-{
+void lumaChromaLeftCallback(const crl::multisense::image::Header &header,
+                            void *userDataP) {
     updateLumaAndChroma(header);
 }
 
@@ -515,24 +580,16 @@ void SetFPS(float FPS) {
 }
 
 
-
-
-
-pcl::visualization::PCLVisualizer::Ptr simpleVis (pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
-{
+void simpleVis(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) {
     // --------------------------------------------
     // -----Open 3D viewer and add point cloud-----
     // --------------------------------------------
-    pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-    viewer->setBackgroundColor (0, 0, 0);
-    viewer->addPointCloud<pcl::PointXYZ> (cloud, "sample cloud");
-    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
-    viewer->addCoordinateSystem (1.0);
-    viewer->initCameraParameters ();
-    return (viewer);
+
+    //viewer.showCloud(cloud, "Cloud");
+
 }
 
-void prepareMultiSenseCamera(){
+void prepareMultiSenseCamera() {
 
     std::cout << "Hello, World!" << std::endl;
 
@@ -644,87 +701,46 @@ void prepareMultiSenseCamera(){
     m_channelP->addIsolatedCallback(disparityCallback, crl::multisense::Source_Disparity);
     m_channelP->addIsolatedCallback(disparityCostCallback, crl::multisense::Source_Disparity_Cost);
 
-    m_channelP->addIsolatedCallback(lumaChromaLeftCallback, crl::multisense::Source_Luma_Left | crl::multisense::Source_Luma_Right);
+    m_channelP->addIsolatedCallback(lumaChromaLeftCallback,
+                                    crl::multisense::Source_Luma_Left | crl::multisense::Source_Luma_Right);
 
 }
 
 
-int main(){
+int main() {
 
 // ------------------------------------
     // -----Create example point cloud-----
     // ------------------------------------
-    pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
-    std::cout << "Generating example point clouds.\n\n";
-    // We're going to make an ellipse extruded along the z-axis. The colour for
-    // the XYZRGB cloud will gradually go from red to green to blue.
-    std::uint8_t r(255), g(15), b(15);
-    for (float z(-1.0); z <= 1.0; z += 0.05)
-    {
-        for (float angle(0.0); angle <= 360.0; angle += 5.0)
-        {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+    for (float z(-1.0); z <= 1.0; z += 0.05) {
+        for (float angle(0.0); angle <= 360.0; angle += 5.0) {
             pcl::PointXYZ basic_point;
-            basic_point.x = 0.5 * std::cos (pcl::deg2rad(angle));
-            basic_point.y = sinf (pcl::deg2rad(angle));
+            basic_point.x = 0.5 * std::cos(pcl::deg2rad(angle));
+            basic_point.y = sinf(pcl::deg2rad(angle));
             basic_point.z = z;
             basic_cloud_ptr->points.push_back(basic_point);
 
-            pcl::PointXYZRGB point;
-            point.x = basic_point.x;
-            point.y = basic_point.y;
-            point.z = basic_point.z;
-            std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |
-                                 static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
-            point.rgb = *reinterpret_cast<float*>(&rgb);
-            point_cloud_ptr->points.push_back (point);
         }
-        if (z < 0.0)
-        {
-            r -= 12;
-            g += 12;
-        }
-        else
-        {
-            g -= 12;
-            b += 12;
-        }
+
     }
-    basic_cloud_ptr->width = basic_cloud_ptr->size ();
+    basic_cloud_ptr->width = basic_cloud_ptr->size();
     basic_cloud_ptr->height = 1;
-    point_cloud_ptr->width = point_cloud_ptr->size ();
-    point_cloud_ptr->height = 1;
 
-    // ----------------------------------------------------------------
-    // -----Calculate surface normals with a search radius of 0.05-----
-    // ----------------------------------------------------------------
-    pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
-    ne.setInputCloud (point_cloud_ptr);
-    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
-    ne.setSearchMethod (tree);
-    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals1 (new pcl::PointCloud<pcl::Normal>);
-    ne.setRadiusSearch (0.05);
-    ne.compute (*cloud_normals1);
+    cloud = basic_cloud_ptr;
 
-    // ---------------------------------------------------------------
-    // -----Calculate surface normals with a search radius of 0.1-----
-    // ---------------------------------------------------------------
-    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals2 (new pcl::PointCloud<pcl::Normal>);
-    ne.setRadiusSearch (0.1);
-    ne.compute (*cloud_normals2);
-
-    pcl::visualization::PCLVisualizer::Ptr viewer;
-    viewer = simpleVis(basic_cloud_ptr);
-
+    viewer.registerKeyboardCallback(keyboardEventOccurred);
+    viewer.registerMouseCallback(mouseEventOccurred);
+    viewer.runOnVisualizationThreadOnce(viewerOneOff);
 
     prepareMultiSenseCamera();
 
     //--------------------
     // -----Main loop-----
     //--------------------
-    while (!viewer->wasStopped ())
-    {
-        viewer->spinOnce (100);
+    while (!viewer.wasStopped()) {
+
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
