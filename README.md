@@ -31,40 +31,25 @@ make -j$(CORES)
 
 ### PCL_SUPPORT
 
-The PCL visualizer is dependent on VTK. build and install this dependency before building PCL in order to build the PCL
+The PCL visualizer which is used for displaying reuslts is dependent on VTK. build and install this dependency before building PCL in order to build the PCL
 examples. Build instructions for VTK are available on gitlab.
 https://gitlab.kitware.com/vtk/vtk/-/blob/master/Documentation/dev/build.md
-
-Next steps include downloading and building PCL from source. Be patient with this step if you don't have PCL installed
-already, be prepared to get a coffee or five while compiling the PCL source.
-
-Locate and download pcl source: [PCL](https://pcl.readthedocs.io/projects/tutorials/en/latest/compiling_pcl_posix.html)
-Extract source code and create a build directory.
-
+or run in terminal 
 ``` shell
-cd $(BUILD)
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_visualization=ON $(PCL_SOURCE) 
-
-make -j$(CORES)
-sudo make  install
+sudo apt install libvtk7-dev
+sudo apt install libpcl-dev
 ```
-
-Note: Choosing -j to be too large when building PCL has resulted in system crashes across two different PCs for me. be
-patient and stay well below half of your physical cpu count.
+If you prefer to build PCL from source, then be patient and follow their [guide for PCL here](https://pcl.readthedocs.io/projects/tutorials/en/latest/compiling_pcl_posix.html)
 
 Now build this repo with following:
 
 ``` shell
-cmake -DBUILD_PCL_EXAMPLE=True ..
-
+cmake -DBUILD_PCL_EXAMPLE=True $(SRC_DIR)
+make -j$(CORES)
 ```
 
-## Usage
-
-Minimal usage:
-
-
-Executables are located in $(BUILD)/bin
+## Samples
+Samples are displayed under [example](https://github.com/M-Gjerde/MultiSense-Samples/tree/master/example) folder
 
 ## Support
 
@@ -89,7 +74,7 @@ sudo ifconfig [Interface_name] 10.66.171.20 netmask 255.255.255.0 up
 sudo ifconfig [Interface_name] mtu 7200
 ```
 
-After this is can be possible to run ''sudo service-network-manager start'' again in order to have a wifi network connection.
+After this is can be possible to run ``sudo service-network-manager start`` again in order to have a wifi network connection.
 
 Additionally, if you haven't set socket default buffer size:
 
