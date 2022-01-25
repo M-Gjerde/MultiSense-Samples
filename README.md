@@ -4,8 +4,8 @@ Get better started with your Carnegie Robotics' MultiSense stereo products
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Usage](#usage)
+- [Installation](#installation---linux)
+- [Usage](#Usage)
 - [Support](#support)
 - [Contributing](#contributing)
 
@@ -55,8 +55,8 @@ cmake -DBUILD_PCL_EXAMPLE=True $(SRC_DIR)
 make
 ```
 
-## Samples
-Samples are displayed under [example](https://github.com/M-Gjerde/MultiSense-Samples/tree/master/example) folder
+## Usage
+Samples and usage are displayed under [example](https://github.com/M-Gjerde/MultiSense-Samples/tree/master/example) folder. Otherwise executables are in the build folder.
 
 ## Support
 
@@ -81,7 +81,7 @@ sudo ifconfig [Interface_name] 10.66.171.20 netmask 255.255.255.0 up
 sudo ifconfig [Interface_name] mtu 7200
 ```
 
-After this is can be possible to run ``sudo service-network-manager start`` again in order to have a wifi network connection.
+After this it may be possible to run ``sudo service-network-manager start`` again in order to have a working wifi network connection.
 
 Additionally, if you haven't set socket default buffer size:
 
@@ -89,7 +89,6 @@ Additionally, if you haven't set socket default buffer size:
 sudo sh -c 'echo 16777215 > /proc/sys/net/core/rmem_max'
 sudo sh -c 'echo 16777215 > /proc/sys/net/core/wmem_max'
 ```
-
 And retry.
 
 ## Contributing
