@@ -84,9 +84,12 @@ Could not start communications with MultiSense sensor.
 Run in terminal:
 
 ``` shell
+sudo service network-manager stop
 sudo ifconfig [Interface_name] 10.66.171.20 netmask 255.255.255.0 up
 sudo ifconfig [Interface_name] mtu 7200
 ```
+
+After this is can be possible to run ''sudo service-network-manager start'' again in order to have a wifi network connection.
 
 Additionally, if you haven't set socket default buffer size:
 
